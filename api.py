@@ -54,16 +54,20 @@ def calculate_flux():
 
         # --- 步骤 3: 解析和可视化 ---
         flux_data = parse_meshtal(meshtal_path)
-        radial_plot, axial_plot = plot_flux_distributions(flux_data, core_radius, core_height)
+        
+        # !! 修改在这里: 把 run_dir (画室地址) 传递给绘图函数 !!
+        # 注意：这里的 radial_plot 和 axial_plot 现在是文件的绝对路径，但我们不需要用它们
+        plot_flux_distributions(flux_data, core_radius, core_height, run_dir)
         
         # 你的 Render 服务的公开 URL
-        base_url = "https://kernelcompute.onrender.com" # <-- 确保这是你的 URL
+        base_url = "https://kernelcompute.onrender.com"
 
         return jsonify({
             "status": "success",
             "run_id": run_id,
             "message": "Calculation (mocked) complete. Plots generated.",
             "plots": {
+                # 我们手动构建正确的 URL
                 "radial": f"{base_url}/results/{run_id}/radial_flux.png",
                 "axial": f"{base_url}/results/{run_id}/axial_flux.png"
             }
