@@ -7,12 +7,6 @@ import matplotlib.pyplot as plt
 def parse_meshtal(meshtal_file: str) -> np.ndarray:
     """
     Parses the MCNP 'meshtal' file to extract the 3D flux data.
-
-    Args:
-        meshtal_file (str): Path to the 'meshtal' file.
-
-    Returns:
-        A 3D numpy array containing the neutron flux data (x, y, z).
     """
     with open(meshtal_file, 'r') as f:
         lines = f.readlines()
@@ -20,7 +14,8 @@ def parse_meshtal(meshtal_file: str) -> np.ndarray:
     # Find where the data block begins
     data_start_line = 0
     for i, line in enumerate(lines):
-        if "Energy" in line and "Rel Error" in line:
+        # A more robust way to find the start of data
+        if line.strip().endswith("Rel Error"):
             data_start_line = i + 1
             break
 
@@ -28,28 +23,38 @@ def parse_meshtal(meshtal_file: str) -> np.ndarray:
     flux_data = []
     for line in lines[data_start_line:]:
         parts = line.split()
-        if len(parts) >= 8: # A data line should have at least this many parts
-            flux_data.append(float(parts[7]))
+        # In our fake data, the flux is the 4th value
+        if len(parts) >= 4:
+            try:
+                flux_data.append(float(parts[3]))
+            except (ValueError, IndexError):
+                continue # Skip lines that are not valid data
 
-    # Find dimensions from the header (a bit of parsing logic)
+    # Find dimensions from the header
     nx, ny, nz = 0, 0, 0
     for line in lines:
         if "X direction" in line:
-            nx = int(line.split()[-1])
+            # --- 修改在这里: 从 [-1] 改为 [-2] ---
+            nx = int(line.split()[-2])
         if "Y direction" in line:
-            ny = int(line.split()[-1])
+            # --- 修改在这里: 从 [-1] 改为 [-2] ---
+            ny = int(line.split()[-2])
         if "Z direction" in line:
-            nz = int(line.split()[-1])
+            # --- 修改在这里: 从 [-1] 改为 [-2] ---
+            nz = int(line.split()[-2])
         if nx > 0 and ny > 0 and nz > 0:
             break
-            
-    if nx * ny * nz == 0:
-        raise ValueError("Could not determine mesh dimensions from meshtal file.")
+    
+    if nx * ny * nz == 0 or len(flux_data) != nx * ny * nz:
+        raise ValueError(f"Mismatch in dimensions or data size. Found {len(flux_data)} data points, expected {nx*ny*nz}.")
 
     # Reshape the flat list of data into a 3D numpy array
+    # IMPORTANT: MCNP meshtal data is often in (Z, Y, X) order of loops.
+    # When we reshape, we need to be careful. The fake data was generated in (X,Y,Z) order.
+    # Let's reshape and then transpose if needed to match visualization.
     flux_array = np.array(flux_data).reshape((nx, ny, nz))
     return flux_array
-
+    
 def plot_flux_distributions(flux_data: np.ndarray, core_radius: float, core_height: float) -> (str, str):
     """
     Generates and saves radial and axial flux distribution plots.
