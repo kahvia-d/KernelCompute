@@ -1,3 +1,4 @@
+import os
 import matplotlib
 matplotlib.use('Agg')
 
@@ -123,7 +124,7 @@ def plot_flux_distributions(flux_data: np.ndarray, core_radius: float, core_heig
 
     # 返回图片的绝对路径
     return os.path.abspath(radial_plot_path), os.path.abspath(axial_plot_path)
-    
+
 if __name__ == '__main__':
     # Example: Assumes a 'meshtal' file exists in the current directory
     try:
